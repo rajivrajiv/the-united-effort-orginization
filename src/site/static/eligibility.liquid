@@ -183,8 +183,8 @@ pageClass: "page-public-assistance"
                 <label for="served-from">Served From</label>
                 <input type="date" id="served-from" />
                 
-                <label for="served-until">Until</label>
-                <input type="date" id="served-until" />
+                <label for="served-untiil">Until</label>
+                <input type="date" id="served-untiil" />
               </li>
             </ul>
           </div>
@@ -1096,15 +1096,21 @@ pageClass: "page-public-assistance"
   // "the next page in the sequence".
   function customPageLinking(pageById) {
     
-    pageById["page-yourself-start"].next = function() {
-      if (document.getElementById("age").value < 18 && document.getElementById("age").value > 0) {
+    pageById["page-yourself-start"].next = function () {
+
+      const isUnderEighteen = document.getElementById("age").value < 18 && document.getElementById("age").value > 0
+      const isDisabled = document.getElementById("disabled").checked;
+      const isBlind = document.getElementById("blind").checked;
+      const isDeaf = document.getElementById("deaf").checked;
+      const isVeteran = document.getElementById("veteran").checked;
+      const isPregnant = document.getElementById("pregnant").checked;
+      const isFeeding = document.getElementById("feeding").checked;
+      const isCitizen = document.getElementById("citizen").checked;
+
+      if (isUnderEighteen) {
         return pageById["page-head-of-household"];
       }
-      return pageById["page-head-of-household"].next();
-    };
-
-    pageById["page-head-of-household"].next = function() {
-      if (document.getElementById("disabled").checked || document.getElementById("blind").checked || document.getElementById("deaf").checked) {
+      if (isDisabled || isBlind || isDeaf) {
         return pageById["page-disability-details"];
       }
       return pageById["page-disability-details"].next();
@@ -1117,24 +1123,27 @@ pageClass: "page-public-assistance"
       return pageById["page-veteran-details"].next();		
     };
 
-    pageById["page-veteran-details"].next = function() {
-      if (getNumberOfDays(document.getElementById("served-from").value, document.getElementById("served-until").value) < 720) {
-        const fromPlaceHolder = document.getElementById("served-from-placeholder");
-        fromPlaceHolder.textContent = getFormattedDutyDate(document.getElementById("served-from").value);
+    pageById["page-head-of-household"].next = function () {
+      const isDisabled = document.getElementById("disabled").checked;
+      const isBlind = document.getElementById("blind").checked;
+      const isDeaf = document.getElementById("deaf").checked;
+      const isVeteran = document.getElementById("veteran").checked;
+      const isPregnant = document.getElementById("pregnant").checked;
+      const isFeeding = document.getElementById("feeding").checked;
+      const isCitizen = document.getElementById("citizen").checked;
 
-        const untilPlaceHolder = document.getElementById("served-until-placeholder");
-        untilPlaceHolder.textContent = getFormattedDutyDate(document.getElementById("served-until").value);
-
-        return pageById["page-veteran-duty-period"];
+      if (isDisabled || isBlind || isDeaf) {
+        return pageById["page-disability-details"];
       }
-      return pageById["page-veteran-duty-period"].next();		
-    };
-
-    pageById["page-veteran-duty-period"].next = function() {			
-      if (!document.getElementById("citizen").checked) {
+      if (isVeteran) {
+        return pageById["page-veteran-details"];
+      }
+      if (isPregnant || isFeeding) {
+        return pageById["page-household-start"];
+      }
+      if (!isCitizen) {
         return pageById["page-immigration-status"];
       }
-      return pageById["page-immigration-status"].next();
     };
 
 
@@ -1210,79 +1219,6 @@ pageClass: "page-public-assistance"
 
   }
 
-  function getNumberOfDays(start, end) {
-    const date1 = new Date(start + 'T00:00');
-    const date2 = new Date(end + 'T00:00');
-
-    // Time difference between two dates.
-    const difference = date2.getTime() - date1.getTime();
-
-    // One day in milliseconds.
-    const oneDay = 1000 * 60 * 60 * 24;
-
-    // Number of days between two dates.
-    return Math.ceil(difference / oneDay);
-  }
-
-  
-  function getFormattedDutyDate(dutyDate)	{
-    const date1 = new Date(dutyDate + 'T00:00');
-    return (date1.getMonth() + 1 + '/' + date1.getDate() + '/' + date1.getFullYear());
-  }
-
-  function incomeTotal(incomeType) {
-    const selector = "#page-income-details-" + incomeType + " .income_total";
-    return Number(document.querySelector(selector).textContent);
-  }
-
-  function totalEarnedIncome() {
-    return incomeTotal("wages") + incomeTotal("self-employed");
-  }
-
-  function totalUnearnedIncome() {
-    return (incomeTotal("social-security") + incomeTotal("unemployment") + 
-      incomeTotal("veterans") + incomeTotal("workers-comp") + 
-      incomeTotal("child-support") + incomeTotal("retirement") + 
-      incomeTotal("other"));
-  }
-
-  function grossIncome() {
-    const total = totalEarnedIncome() + totalUnearnedIncome();
-    if (total == 0 && !document.getElementById("income-has-none").checked) {
-      return null;
-    }
-    return total;
-  }
-
-  function householdSize() {
-    hh_members = document.querySelectorAll(
-      "#page-household-members ul.dynamic_field_list>li");
-    return hh_members.length;
-  }
-
-  class MonthlyIncomeLimit {
-    constructor(limits, addlPersonExtra) {
-      this.limits = limits;
-      this.addlPersonExtra = addlPersonExtra;
-    }
-
-    static fromAnnual(limits, addlPersonExtra) {
-      return new MonthlyIncomeLimit(
-        limits.map(l => l / 12), addlPersonExtra / 12);
-    }
-
-    getLimit(hhSize) {
-      if (hhSize < 1) {
-        return 0;
-      } else if (hhSize > this.limits.length) {
-        const extra = this.addlPersonExtra * (hhSize - this.limits.length);
-        return this.limits[this.limits.length - 1] + extra;
-      } else {
-        return this.limits[hhSize - 1];
-      }
-    }
-  } 
-  
   // The functions below determine eligibility for various programs.
   // When a program is added using the "program" shortcode, a matching function
   // should be defined called {id}Eligible where {id} is the id given in
