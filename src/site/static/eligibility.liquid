@@ -1100,7 +1100,11 @@ pageClass: "page-public-assistance"
       if (document.getElementById("age").value < 18 && document.getElementById("age").value > 0) {
         return pageById["page-head-of-household"];
       }
-      if (isDisabled || isBlind || isDeaf) {
+      return pageById["page-head-of-household"].next();
+    };
+
+    pageById["page-head-of-household"].next = function() {
+      if (document.getElementById("disabled").checked || document.getElementById("blind").checked || document.getElementById("deaf").checked) {
         return pageById["page-disability-details"];
       }
       return pageById["page-disability-details"].next();
@@ -1114,24 +1118,17 @@ pageClass: "page-public-assistance"
     };
 
     pageById["page-veteran-details"].next = function() {
-      if ( getNumberOfDays(document.getElementById("served-from").value, document.getElementById("served-until").value) < 720 ) {
+      if (getNumberOfDays(document.getElementById("served-from").value, document.getElementById("served-until").value) < 720) {
         return pageById["page-veteran-duty-period"];
       }
       return pageById["page-veteran-duty-period"].next();		
     };
 
-      if (isDisabled || isBlind || isDeaf) {
-        return pageById["page-disability-details"];
-      }
-      if (isVeteran) {
-        return pageById["page-veteran-details"];
-      }
-      if (isPregnant || isFeeding) {
-        return pageById["page-household-start"];
-      }
-      if (!isCitizen) {
+    pageById["page-veteran-duty-period"].next = function() {			
+      if ( !document.getElementById("citizen").checked ) {
         return pageById["page-immigration-status"];
       }
+      return pageById["page-immigration-status"].next();		
     };
 
 
@@ -1218,7 +1215,7 @@ pageClass: "page-public-assistance"
       const oneDay = 1000 * 60 * 60 * 24;
 
       // Number of days between two dates.
-      let TotalDays = Math.ceil(difference / oneDay);
+      const TotalDays = Math.ceil(difference / oneDay);
 
       return TotalDays;
   }
